@@ -1,46 +1,60 @@
-# FairVFL
+# MyVFL: Fairness-Aware Vertical Federated Learning for skin cancer detection
 
-A modular Python implementation of FairVFL for CelebA for local use and GitHub deployment.
+A modular Python implementation of **FairVFL** adapted for the HAM10000 skin lesion dataset.  
+This project provides a research-ready codebase for exploring fairness and privacy in vertical federated learning (VFL) using both image and tabular medical data.
 
-## Project Structure
+---
 
-- `main.py` — Entry point for training and evaluation
-- `data.py` — Data loading and preprocessing
-- `model.py` — Model architectures
-- `train.py` — Training routines
-- `evaluate.py` — Evaluation routines
-- `requirements.txt` — Python dependencies
-- `.gitignore` — Standard ignores for Python and data
-- `/data/` — Place the CelebA dataset here
+## 📂 Project Structure
 
-## Setup
+- `main.py` — Entry point for training and evaluation  
+- `debug.py` — Quick debug mode using a reduced subset for fast checks  
+- `data.py` — Data loading and preprocessing (HAM10000 images + metadata)  
+- `model.py` — Model architectures (CNN, tabular encoder, fairness heads)  
+- `train.py` — Training routines  
+- `evaluate.py` — Evaluation and fairness audit routines  
+- `requirements.txt` — Python dependencies  
+- `.gitignore` — Standard ignores for Python and data  
+- `/data/` — Place the HAM10000 dataset here
 
-1. Clone this repository.
-2. Download the CelebA dataset from [here](https://www.kaggle.com/datasets/jessicali9530/celeba-dataset) and place it in the `/data` folder, preserving all subfolders and CSVs as follow:
-```
-data/
-├── img_align_celeba/                    # Directory with all CelebA face images
-│   ├── 000001.jpg
-│   ├── 000002.jpg
-│   └── ...
-├── list_attr_celeba.csv                 # Attribute labels (gender, age, etc.)
-├── list_bbox_celeba.csv                 # Bounding box coordinates
-└── list_landmarks_align_celeba.csv      # Facial landmark positions
-```
-3. Install dependencies:
+---
+
+## 📥 Setup
+
+1. **Clone this repository.**
+
+2. **Download the HAM10000 dataset** from [here](https://www.kaggle.com/datasets/kmader/skin-cancer-mnist-ham10000)  
+   Place the extracted folders and CSV in your `/data` directory as follows:
+
+    ```
+    data/
+    ├── HAM10000_images_part_1/         # First batch of skin lesion images
+    │   ├── ISIC_0024306.jpg
+    │   ├── ...
+    ├── HAM10000_images_part_2/         # Second batch of images
+    │   ├── ISIC_0032012.jpg
+    │   ├── ...
+    ├── HAM10000_metadata.csv           # Metadata for each image (age, sex, dx, localization)
+    ```
+
+
+3. **Install dependencies:**
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+---
+
+## 🚀 Run
+
+To start training and evaluating the FairVFL model, run from the project root:
 
 ```bash
-pip3 install -r requirements.txt
+python main.py
 ```
-## Run
-
-To start training and evaluating the FairVFL model, run the following command from the project root:
+Or alternatively for faster testing, try running the debug script:
 
 ```bash
-python3 main.py
+python debug.py
 ```
-
-This will:
-- Load the CelebA dataset from the `data/` directory
-- Train both FairVFL and VanillaFL models
-- Print evaluation and fairness metrics
