@@ -16,7 +16,7 @@ A modular Python implementation of FairVFL for CelebA for local use and GitHub d
 ## Setup
 
 1. Clone this repository.
-2. Download the CelebA dataset and place it in the `/data` folder, preserving all subfolders and CSVs as follow:
+2. Download the CelebA dataset from [here](https://www.kaggle.com/datasets/jessicali9530/celeba-dataset) and place it in the `/data` folder, preserving all subfolders and CSVs as follow:
 ```
 data/
 ├── img_align_celeba/                    # Directory with all CelebA face images
