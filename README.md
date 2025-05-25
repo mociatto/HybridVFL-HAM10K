@@ -27,13 +27,13 @@ This project provides a research-ready codebase for exploring fairness and priva
 
     ```
     data/
-    ├── HAM10000_images_part_1/         # First batch of skin lesion images
+    ├── HAM10000_images_part_1/
     │   ├── ISIC_0024306.jpg
     │   ├── ...
-    ├── HAM10000_images_part_2/         # Second batch of images
+    ├── HAM10000_images_part_2/
     │   ├── ISIC_0032012.jpg
     │   ├── ...
-    ├── HAM10000_metadata.csv           # Metadata for each image (age, sex, dx, localization)
+    ├── HAM10000_metadata.csv
     ```
 
 
