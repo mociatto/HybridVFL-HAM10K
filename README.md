@@ -7,8 +7,7 @@ This project provides a research-ready codebase for exploring fairness and priva
 
 ## Project Structure
 
-- `main.py` — Entry point for training and evaluation  
-- `debug.py` — Quick debug mode using a reduced subset for fast checks  
+- `main.py` — Entry point for training and evaluation
 - `data.py` — Data loading and preprocessing (HAM10000 images + metadata)  
 - `model.py` — Model architectures (CNN, tabular encoder, fairness heads)  
 - `train.py` — Training routines  
