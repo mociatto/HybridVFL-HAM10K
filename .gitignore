@@ -80,3 +80,4 @@ update_repo.sh
 *.ipynb
 *.csv
 
+.venv
