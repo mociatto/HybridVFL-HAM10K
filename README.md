@@ -22,7 +22,7 @@ This project provides a research-ready codebase for exploring fairness and priva
 
 1. Clone this repository.
 
-2. Download the HAM10000 dataset** from [here](https://www.kaggle.com/datasets/kmader/skin-cancer-mnist-ham10000)  
+2. Download the HAM10000 dataset from [here](https://www.kaggle.com/datasets/kmader/skin-cancer-mnist-ham10000)  
    Place the extracted folders and CSV in your `/data` directory as follows:
 
     ```
