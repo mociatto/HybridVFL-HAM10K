@@ -1,10 +1,9 @@
 import numpy as np
-from tensorflow.keras.utils import to_categorical
 from data import DataGenerator, load_and_preprocess_image
 from model import get_model_variant
 
 
-def preprocess_images(paths, target_size=(218, 178)):
+def preprocess_images(paths, target_size=(224, 224)):
     return np.array([load_and_preprocess_image(p, target_size) for p in paths])
 
 
@@ -39,14 +38,13 @@ def FairVFL_train(train_data, val_data, test_data,
 
         if with_fairness:
             print("Preprocessing train images for fairness models...")
-            train_images = preprocess_images(train_data[0])
+            train_images = preprocess_images(train_data[0], target_size=(224, 224))
 
             print("Generating embeddings...")
             train_embeddings = rep_model.predict([train_images, train_data[1]], batch_size=batch_size)
 
-            # Convert one-hot to class labels
-            gender_targets = np.argmax(train_attr[0], axis=1)
-            age_targets = np.argmax(train_attr[1], axis=1)
+            gender_targets = train_attr[:, 0]  # already integer-encoded
+            age_targets = train_attr[:, 1]     # already binned/encoded (if needed)
 
             print("Training gender model...")
             gender_model.fit(train_embeddings, gender_targets, batch_size=batch_size, epochs=1, verbose=1)

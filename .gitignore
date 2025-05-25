@@ -75,3 +75,8 @@ FairVFL_debug_results.npy
 .idea/
 
 update_repo.sh
+
+# Kaggle metadata or exported notebooks
+*.ipynb
+*.csv
+
