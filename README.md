@@ -1,4 +1,4 @@
-# MyVFL: Fairness-Aware Vertical Federated Learning for Skin Cancer Detection
+# FairVFL-HAM10K: Fairness-Aware Vertical Federated Learning for Skin Cancer Detection
 
 A modular Python implementation of **FairVFL** adapted for the HAM10000 skin lesion dataset.  
 This project provides a research-ready codebase for exploring fairness and privacy in vertical federated learning using both image and tabular medical data.
