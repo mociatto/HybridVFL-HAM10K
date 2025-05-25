@@ -54,8 +54,10 @@ coverage.xml
 .mypy_cache/
 .dmypy.json
 
-# Data
-/data/
+# Data folder content ignored
+/data/*
+!/data/.gitkeep
+
 
 # OS files
 .DS_Store
