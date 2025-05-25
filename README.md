@@ -32,3 +32,15 @@ data/
 ```bash
 pip3 install -r requirements.txt
 ```
+## Run
+
+To start training and evaluating the FairVFL model, run the following command from the project root:
+
+```bash
+python3 main.py
+```
+
+This will:
+- Load the CelebA dataset from the `data/` directory
+- Train both FairVFL and VanillaFL models
+- Print evaluation and fairness metrics
