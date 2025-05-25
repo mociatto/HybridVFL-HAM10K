@@ -83,3 +83,5 @@ update_repo.sh
 *.csv
 
 .venv
+
+debug.py
