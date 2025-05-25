@@ -53,7 +53,7 @@ To start training and evaluating the FairVFL model, run from the project root:
 ```bash
 python main.py
 ```
-**For faster testing, you can reduce the percentage of data used by setting the `PERCENTAGE` variable in `main.py` to a lower value (e.g., `PERCENTAGE = 0.1` for 10% of the data). This will significantly speed up training and evaluation, making it ideal for quick experiments or debugging.**
+Note: For faster testing, you can reduce the percentage of data used by setting the `PERCENTAGE` variable in `main.py` to a lower value (e.g., `PERCENTAGE = 0.1` for 10% of the data). This will significantly speed up training and evaluation, making it ideal for quick experiments or debugging.**
 
 ```python
 PERCENTAGE = 0.1  # Use only 10% of data for fast testing
