@@ -1,11 +1,11 @@
-# MyVFL: Fairness-Aware Vertical Federated Learning for skin cancer detection
+# MyVFL: Fairness-Aware Vertical Federated Learning for Skin Cancer Detection
 
 A modular Python implementation of **FairVFL** adapted for the HAM10000 skin lesion dataset.  
-This project provides a research-ready codebase for exploring fairness and privacy in vertical federated learning (VFL) using both image and tabular medical data.
+This project provides a research-ready codebase for exploring fairness and privacy in vertical federated learning using both image and tabular medical data.
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 - `main.py` — Entry point for training and evaluation  
 - `debug.py` — Quick debug mode using a reduced subset for fast checks  
@@ -19,7 +19,7 @@ This project provides a research-ready codebase for exploring fairness and priva
 
 ---
 
-## 📥 Setup
+## Setup
 
 1. **Clone this repository.**
 
@@ -46,7 +46,7 @@ This project provides a research-ready codebase for exploring fairness and priva
 
 ---
 
-## 🚀 Run
+## Run
 
 To start training and evaluating the FairVFL model, run from the project root:
 
