@@ -20,7 +20,7 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 BATCH_SIZE = 32
 EPOCHS = 1
 ROUNDS = 2
-PERCENTAGE = 0.05
+PERCENTAGE = 0.02
 LR = 0.001
 HYPER_GENDER = 0.005
 HYPER_AGE = 0.001
@@ -117,6 +117,43 @@ if __name__ == "__main__":
         val_input = (val_images, val_feats, val_labels, val_attrs[:, 0], val_attrs[:, 1], val_metadata)
         test_result = evaluation(fusion_head, image_embedding_model, tabular_embedding_model, test_input)
         val_result = evaluation(fusion_head, image_embedding_model, tabular_embedding_model, val_input)
+
+        from evaluate import (
+            evaluate_image_only, evaluate_tabular_only, evaluate_fusion, fairness_leakage
+        )
+
+        img_only_metrics = evaluate_image_only(image_embedding_model, test_images, test_labels, batch_size=BATCH_SIZE)
+        tab_only_metrics = evaluate_tabular_only(tabular_embedding_model, test_metadata, test_labels, batch_size=BATCH_SIZE)
+
+        # -- Fusion improvement over solo clients
+        fusion_acc = test_result["acc"]
+        fusion_f1 = test_result["f1"]
+        best_solo_acc = max(img_only_metrics["acc"], tab_only_metrics["acc"])
+        best_solo_f1 = max(img_only_metrics["f1"], tab_only_metrics["f1"])
+        print(f"Fusion - Best solo Δaccuracy: {fusion_acc - best_solo_acc:.4f}, ΔF1: {fusion_f1 - best_solo_f1:.4f}")
+
+        # -- Fairness/leakage on image and tabular embeddings (if fairness models exist)
+        if gender_model is not None:
+            print("\nLeakage (Gender) on image embeddings:")
+            fairness_leakage(
+                rep_model,
+                gender_model,
+                test_images,
+                np.zeros_like(test_metadata),  # only image input, zero tabular
+                test_attrs[:, 0],
+                batch_size=BATCH_SIZE,
+                name="GenderLeakage-Image"
+            )
+            print("Leakage (Gender) on tabular embeddings:")
+            fairness_leakage(
+                rep_model,
+                gender_model,
+                np.zeros_like(test_images),  # only tabular input, zero image
+                test_metadata,
+                test_attrs[:, 0],
+                batch_size=BATCH_SIZE,
+                name="GenderLeakage-Tabular"
+            )
 
         print(f"Test result: {test_result}")
         print(f"Validation result: {val_result}")
