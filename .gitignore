@@ -54,10 +54,8 @@ coverage.xml
 .mypy_cache/
 .dmypy.json
 
-# Data folder content ignored
-/data/*
-!/data/.gitkeep
-
+# Data folder content ignored (including .gitkeep)
+data/*
 
 # OS files
 .DS_Store
@@ -67,28 +65,25 @@ Thumbs.db
 source/
 FairVFL_debug_results.npy
 
+# Logs
+*.log
 
 # Mac system files
 *.DS_Store
 
-# Logs
-*.log
-
 .idea/
-
-update_repo.sh
 
 # Kaggle metadata or exported notebooks
 *.ipynb
 *.csv
 
+# Python environment and local scripts
 .venv
-
 debug.py
 
+# Local developer helper scripts (ignored for project cleanliness)
 update_repo.sh
 new_branch.sh
 remove_branch.sh
 
 FairVFL_results.npy
-
