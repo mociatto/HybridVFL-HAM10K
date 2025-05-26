@@ -6,6 +6,17 @@ from model import get_model_variant
 from train import FairVFL_train
 from evaluate import evaluation
 
+from sklearn.metrics import f1_score
+
+def passive_fairness_audit(rep_model, fairness_model, img_paths, tabular, targets, batch_size=32):
+    # Preprocess images and compute embeddings
+    images = np.array([load_and_preprocess_image(p, (224, 224)) for p in img_paths])
+    embeddings = rep_model.predict([images, tabular], batch_size=batch_size)
+    preds = np.argmax(fairness_model.predict(embeddings, batch_size=batch_size), axis=1)
+    acc = np.mean(preds == targets)
+    f1 = f1_score(targets, preds, average='weighted')
+    return {"acc": acc, "f1": f1}
+
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 BATCH_SIZE = 32
 EPOCHS = 1
@@ -48,33 +59,39 @@ if __name__ == "__main__":
         )
 
     print("\nDataset sizes:")
-    print(f"Train: {len(train_imgs)} | Val: {len(val_imgs)} | Test: {len(test_imgs)} | Percentage: {PERCENTAGE*100:.0f}%")
+    print(f"Train: {len(train_imgs)} | Val: {len(val_imgs)} | Test: {len(test_imgs)} | Percentage: {int(PERCENTAGE*100)}%")
     print(f"Rounds: {ROUNDS} | Epochs per round: {EPOCHS} | Batch size: {BATCH_SIZE}\n")
 
     results_summary = {}
     start = time.time()
     modes = {"FairVFL": True, "VanillaFL": False}
 
+    # To track FairVFL fairness models for passive audit
+    fair_gender_model = None
+    fair_age_model = None
+    fair_rep_model = None
+
+    # For storing both rep_models for probing
+    vanilla_rep_model = None
+
     for mode_label, with_fairness in modes.items():
         print(f"\n======= Training Mode: {mode_label} (with_fairness={with_fairness}) =======")
 
-        # Initialize ALL models at first round
-        model, rep_model, gender_model, age_model, _, _, gender_cons_adv, age_cons_adv = get_model_variant(
+        model, rep_model, gender_model, age_model, _, _, _, _ = get_model_variant(
             (train_imgs, train_feats, train_labels, train_attrs),
             LR, HYPER_GENDER, HYPER_AGE, with_fairness=with_fairness
         )
 
         for round_idx in range(ROUNDS):
             print(f"\n--- FL Round {round_idx + 1}/{ROUNDS} ---")
-            model, rep_model, gender_model, age_model, _, _, gender_cons_adv, age_cons_adv = FairVFL_train(
+            model, rep_model, gender_model, age_model, _, _, _, _ = FairVFL_train(
                 (train_imgs, train_feats, train_labels, train_attrs),
                 (val_imgs, val_feats, val_labels, val_attrs),
                 (test_imgs, test_feats, test_labels, test_attrs),
                 train_labels, val_labels, test_labels,
                 lr=LR, hyper_gender=HYPER_GENDER, hyper_age=HYPER_AGE,
                 epochs=EPOCHS, batch_size=BATCH_SIZE, mode=mode_label,
-                model=model, rep_model=rep_model, gender_model=gender_model, age_model=age_model,
-                gender_cons_adv=gender_cons_adv, age_cons_adv=age_cons_adv
+                model=model, rep_model=rep_model, gender_model=gender_model, age_model=age_model
             )
 
         print("\nEvaluating after final round...")
@@ -88,6 +105,39 @@ if __name__ == "__main__":
         print(f"Test result: {test_result}")
         print(f"Validation result: {val_result}")
         results_summary[mode_label] = {"test": test_result, "val": val_result}
+
+        # If this is FairVFL, keep the fairness models/rep_model for passive audit
+        if with_fairness:
+            fair_gender_model = gender_model
+            fair_age_model = age_model
+            fair_rep_model = rep_model
+
+        # If VanillaFL, keep the rep_model for probing
+        if not with_fairness:
+            vanilla_rep_model = rep_model
+
+    # After both loops, probe both representations with FairVFL fairness heads
+    print("\n--- Passive Fairness Audit: Probing both embeddings with FairVFL fairness heads ---")
+    if fair_gender_model is not None and fair_age_model is not None:
+        # Probing FairVFL
+        fair_gender_audit = passive_fairness_audit(
+            fair_rep_model, fair_gender_model, test_imgs, test_feats, test_attrs[:, 0], batch_size=BATCH_SIZE
+        )
+        fair_age_audit = passive_fairness_audit(
+            fair_rep_model, fair_age_model, test_imgs, test_feats, test_attrs[:, 1], batch_size=BATCH_SIZE
+        )
+        print(f"FairVFL: Gender leakage: acc={fair_gender_audit['acc']:.3f}, f1={fair_gender_audit['f1']:.3f}")
+        print(f"FairVFL: Age leakage: acc={fair_age_audit['acc']:.3f}, f1={fair_age_audit['f1']:.3f}")
+
+    if vanilla_rep_model is not None and fair_gender_model is not None and fair_age_model is not None:
+        vanilla_gender_audit = passive_fairness_audit(
+            vanilla_rep_model, fair_gender_model, test_imgs, test_feats, test_attrs[:, 0], batch_size=BATCH_SIZE
+        )
+        vanilla_age_audit = passive_fairness_audit(
+            vanilla_rep_model, fair_age_model, test_imgs, test_feats, test_attrs[:, 1], batch_size=BATCH_SIZE
+        )
+        print(f"VanillaFL: Gender leakage: acc={vanilla_gender_audit['acc']:.3f}, f1={vanilla_gender_audit['f1']:.3f}")
+        print(f"VanillaFL: Age leakage: acc={vanilla_age_audit['acc']:.3f}, f1={vanilla_age_audit['f1']:.3f}")
 
     np.save("FairVFL_results.npy", results_summary)
     print(f"\nTotal training time: {round(time.time() - start, 2)} seconds")
