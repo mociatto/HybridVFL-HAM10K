@@ -1,5 +1,6 @@
 # Ignore all contents of /data/
 data/*
+!data/.gitkeep
 
 # ...other ignore rules as before...
 __pycache__/
