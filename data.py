@@ -5,13 +5,11 @@ import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 
-
 def load_and_preprocess_image(img_path, target_size=(224, 224)):
     img = tf.keras.preprocessing.image.load_img(img_path, target_size=target_size)
     img_array = tf.keras.preprocessing.image.img_to_array(img)
     img_array = img_array / 255.0
     return img_array
-
 
 class DataGenerator(tf.keras.utils.Sequence):
     def __init__(self, image_paths, tabular_inputs, labels, batch_size=32, target_size=(224, 224)):
@@ -30,7 +28,6 @@ class DataGenerator(tf.keras.utils.Sequence):
         batch_labels = self.labels[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_images = [load_and_preprocess_image(path, self.target_size) for path in batch_paths]
         return (np.array(batch_images), np.array(batch_tabular)), np.array(batch_labels)
-
 
 def load_ham10000(data_dir="data", test_size=0.2, random_state=42):
     img_dir1 = os.path.join(data_dir, "HAM10000_images_part_1")
@@ -66,16 +63,30 @@ def load_ham10000(data_dir="data", test_size=0.2, random_state=42):
         full_path = path1 if os.path.exists(path1) else path2
         image_paths.append(full_path)
 
+    # Features for image model (age, sex, localization)
     features = df[['age', 'sex', 'localization']].values
     labels = df['label'].values
     sensitive_attrs = df[['sex', 'age_bin']].values
 
-    img_train, img_test, feat_train, feat_test, label_train, label_test, sens_train, sens_test = train_test_split(
-        image_paths, features, labels, sensitive_attrs,
+    # Metadata for tabular model (Client 2)
+    metadata_cols = ['age', 'sex', 'localization']
+    metadata_tabular = df[metadata_cols].values
+
+    # Alignment: image_paths, features, labels, sens_attrs, metadata_tabular are all in same order (same DataFrame)
+
+    img_train, img_test, feat_train, feat_test, label_train, label_test, sens_train, sens_test, meta_train, meta_test = train_test_split(
+        image_paths, features, labels, sensitive_attrs, metadata_tabular,
         test_size=test_size, random_state=random_state, stratify=labels
     )
 
+    # Return a dictionary interface for consistency with main.py
     return {
-        'train': (img_train, feat_train, label_train, sens_train),
-        'test': (img_test, feat_test, label_test, sens_test)
+        'image_client': {
+            'train': (np.array(img_train), np.array(feat_train), np.array(label_train), np.array(sens_train)),
+            'test': (np.array(img_test), np.array(feat_test), np.array(label_test), np.array(sens_test))
+        },
+        'vertical_client': {
+            'train': (np.array(meta_train), np.array(label_train)),  # meta_train aligned to img_train
+            'test': (np.array(meta_test), np.array(label_test)),     # meta_test aligned to img_test
+        }
     }
