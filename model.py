@@ -1,6 +1,7 @@
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Concatenate, Dropout
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.optimizers import Adam
+import tensorflow as tf
 
 NUM_CLASSES = 7  # HAM10000 has 7 lesion classes
 
@@ -18,7 +19,8 @@ def get_adversarial_autoencoder(embedding_dim):
     x = Dense(128, activation='relu')(input_layer)
     x = Dense(embedding_dim)(x)
     model = Model(inputs=input_layer, outputs=x)
-    model.compile(optimizer=Adam(learning_rate=0.001), loss='mse')
+    # Use legacy optimizer to avoid M1 Mac issues and reduce learning rate
+    model.compile(optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=0.0001), loss='mse')
     return model
 
 def get_image_embedding_model():

@@ -2,6 +2,7 @@ import numpy as np
 from data import DataGenerator, load_and_preprocess_image
 from model import get_model_variant
 import tensorflow as tf
+import time
 
 def preprocess_images(paths, target_size=(224, 224)):
     return np.array([load_and_preprocess_image(p, target_size) for p in paths])
@@ -13,7 +14,9 @@ def FairVFL_train(
     batch_size=128, epochs=10,
     model=None, rep_model=None, gender_model=None, age_model=None,
     image_embedding_model=None, tabular_embedding_model=None, fusion_head=None,
-    gender_cons_adv=None, age_cons_adv=None
+    gender_cons_adv=None, age_cons_adv=None,
+    metrics_callback=None, current_round=0, total_rounds=1, start_time=None,
+    accumulated_histories=None
 ):
     with_fairness = (mode == 'FairVFL')
     train_attr = train_data[3] if with_fairness else None
@@ -35,6 +38,29 @@ def FairVFL_train(
     best_val_acc = 0
     best_weights = None
 
+    # Initialize histories for dashboard
+    train_acc_history = []
+    val_acc_history = []
+    train_loss_history = []
+    gender_acc_history = []
+    age_acc_history = []
+    adv_loss_history = []
+
+    # Get accumulated histories from previous rounds for dashboard display
+    if accumulated_histories is not None:
+        (accumulated_train_acc_history, accumulated_val_acc_history, accumulated_train_loss_history, 
+         accumulated_gender_acc_history, accumulated_age_acc_history, accumulated_adv_loss_history) = accumulated_histories
+    else:
+        accumulated_train_acc_history = []
+        accumulated_val_acc_history = []
+        accumulated_train_loss_history = []
+        accumulated_gender_acc_history = []
+        accumulated_age_acc_history = []
+        accumulated_adv_loss_history = []
+
+    if start_time is None:
+        start_time = time.time()
+
     for epoch in range(epochs):
         print(f"Epoch {epoch + 1}/{epochs}")
 
@@ -50,15 +76,20 @@ def FairVFL_train(
         fused_embeddings = np.concatenate([image_embeddings, tabular_embeddings], axis=1)
         fusion_head.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=lr),
                             loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        fusion_head.fit(fused_embeddings, train_label, batch_size=batch_size, epochs=1, verbose=1)
+        history = fusion_head.fit(fused_embeddings, train_label, batch_size=batch_size, epochs=1, verbose=1)
+        train_loss = history.history['loss'][0]
+        train_acc = history.history['accuracy'][0]
+        train_loss_history.append(train_loss)
+        train_acc_history.append(train_acc)
 
-        # For validation, use val set
+        # Validation
         val_images = preprocess_images(val_data[0], target_size=(224, 224))
         val_image_embeddings = image_embedding_model.predict(val_images, batch_size=batch_size, verbose=0)
         val_tabular_embeddings = tabular_embedding_model.predict(metadata_val, batch_size=batch_size, verbose=0)
         val_fused_embeddings = np.concatenate([val_image_embeddings, val_tabular_embeddings], axis=1)
         val_loss, val_acc = fusion_head.evaluate(val_fused_embeddings, val_label, batch_size=batch_size, verbose=0)
-        print(f"Validation accuracy: {val_acc:.4f}")
+        val_acc_history.append(val_acc)
+
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             best_weights = fusion_head.get_weights()
@@ -66,18 +97,46 @@ def FairVFL_train(
         # --- 4. Fairness/adversarial training using fused embeddings ---
         if with_fairness:
             print("Generating embeddings for fairness heads...")
-            # Use the same fused_embeddings for fairness heads
             gender_targets = train_attr[:, 0]
             age_targets = train_attr[:, 1]
 
+            # Debug: Print shapes
+            print(f"DEBUG: fused_embeddings shape: {fused_embeddings.shape}")
+            print(f"DEBUG: gender_targets shape: {gender_targets.shape}")
+            print(f"DEBUG: age_targets shape: {age_targets.shape}")
+
             print("Training gender model...")
-            gender_model.fit(fused_embeddings, gender_targets, batch_size=batch_size, epochs=1, verbose=1)
+            gender_hist = gender_model.fit(fused_embeddings, gender_targets, batch_size=batch_size, epochs=1, verbose=1)
+            gender_acc = gender_hist.history['accuracy'][0]
+            gender_acc_history.append(gender_acc)
+
             print("Training age model...")
-            age_model.fit(fused_embeddings, age_targets, batch_size=batch_size, epochs=1, verbose=1)
+            age_hist = age_model.fit(fused_embeddings, age_targets, batch_size=batch_size, epochs=1, verbose=1)
+            age_acc = age_hist.history['accuracy'][0]
+            age_acc_history.append(age_acc)
 
             print("Training adversarial models...")
-            gender_cons_adv.fit(fused_embeddings, fused_embeddings, batch_size=batch_size, epochs=1, verbose=1)
-            age_cons_adv.fit(fused_embeddings, fused_embeddings, batch_size=batch_size, epochs=1, verbose=1)
+            # Add safety check for adversarial training
+            if fused_embeddings.shape[0] > 0:
+                try:
+                    # Use smaller batch size for adversarial training to avoid memory issues
+                    adv_batch_size = min(batch_size, fused_embeddings.shape[0])
+                    print(f"DEBUG: Training adversarial model with batch_size={adv_batch_size}")
+                    
+                    adv_hist = gender_cons_adv.fit(fused_embeddings, fused_embeddings, 
+                                                 batch_size=adv_batch_size, epochs=1, verbose=1)
+                    adv_loss = adv_hist.history['loss'][0]
+                    adv_loss_history.append(adv_loss)
+                    
+                    age_cons_adv.fit(fused_embeddings, fused_embeddings, 
+                                   batch_size=adv_batch_size, epochs=1, verbose=1)
+                except Exception as e:
+                    print(f"ERROR in adversarial training: {e}")
+                    print(f"Skipping adversarial training for this epoch")
+                    adv_loss_history.append(0.0)  # Use 0 as fallback
+            else:
+                print("WARNING: Empty fused_embeddings, skipping adversarial training")
+                adv_loss_history.append(0.0)
 
             print("Adversarial representation confusion step...")
             with tf.GradientTape() as tape:
@@ -96,6 +155,49 @@ def FairVFL_train(
             tf.keras.optimizers.Adam(learning_rate=lr).apply_gradients(
                 zip(grads, image_embedding_model.trainable_variables + tabular_embedding_model.trainable_variables)
             )
+        else:
+            # For VanillaFL, append None or 0 to fairness/adversarial histories
+            gender_acc_history.append(None)
+            age_acc_history.append(None)
+            adv_loss_history.append(None)
+
+        # Per-epoch dashboard update
+        if metrics_callback is not None:
+            # Create current combined histories for dashboard display
+            current_train_acc_history = accumulated_train_acc_history + train_acc_history
+            current_val_acc_history = accumulated_val_acc_history + val_acc_history
+            current_train_loss_history = accumulated_train_loss_history + train_loss_history
+            current_gender_acc_history = accumulated_gender_acc_history + gender_acc_history
+            current_age_acc_history = accumulated_age_acc_history + age_acc_history
+            current_adv_loss_history = accumulated_adv_loss_history + adv_loss_history
+            
+            # Determine current status based on mode and fairness training
+            if with_fairness:
+                current_status = f"Training {mode} - Round {current_round} - Epoch {epoch + 1}/{epochs} (Fairness)"
+            else:
+                current_status = f"Training {mode} - Round {current_round} - Epoch {epoch + 1}/{epochs}"
+            
+            metrics_callback({
+                "batch_size": batch_size,
+                "round": current_round,
+                "rounds_total": total_rounds,
+                "epochs_per_round": epochs,
+                "sample_count": len(train_data[0]) + len(val_data[0]) + len(test_data[0]),
+                "feature_class": 7,
+                "running_time": "{:02d}:{:02d}".format(int((time.time() - start_time) // 60), int((time.time() - start_time) % 60)),
+                "current_status": current_status,
+                "train_acc_history": current_train_acc_history,
+                "val_acc_history": current_val_acc_history,
+                "train_loss_history": current_train_loss_history,
+                "gender_acc_history": current_gender_acc_history,
+                "age_acc_history": current_age_acc_history,
+                "adv_loss_history": current_adv_loss_history,
+                "leak_gender_image": 0,
+                "leak_age_image": 0,
+                "leak_gender_tabular": 0,
+                "leak_age_tabular": 0,
+                "start_time": start_time,
+            })
 
     if best_weights is not None:
         fusion_head.set_weights(best_weights)
@@ -108,9 +210,10 @@ def FairVFL_train(
     test_loss, test_acc = fusion_head.evaluate(test_fused_embeddings, test_label, batch_size=batch_size, verbose=0)
     print(f"Test accuracy: {test_acc:.4f}")
 
-    # Return models for next round
+    # Return models and histories for dashboard
     return (
         model, rep_model, gender_model, age_model,
         image_embedding_model, tabular_embedding_model, fusion_head,
-        gender_cons_adv, age_cons_adv
+        gender_cons_adv, age_cons_adv,
+        train_acc_history, val_acc_history, train_loss_history, gender_acc_history, age_acc_history, adv_loss_history
     )

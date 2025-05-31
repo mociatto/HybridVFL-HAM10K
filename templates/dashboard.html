@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HYBRIDFL Dashboard</title>
+    <link rel="stylesheet" href="/static/dashboard.css">
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.3/socket.io.min.js"></script>
+</head>
+<body>
+    <div id="dashboard-root">
+        <div class="top-bar">
+            <div class="logo">HYBRID<span>FL</span></div>
+            <div class="dataset">HAM10K</div>
+            <div class="metrics">
+                <div class="metric status-metric"><span id="current-status">Initializing...</span><br>CURRENT STATUS</div>
+                <div class="metric"><span id="batch-size">-</span><br>BATCH SIZE</div>
+                <div class="metric"><span id="rounds-completed">-</span><br>ROUNDS COMPLETED</div>
+                <div class="metric"><span id="epochs-per-round">-</span><br>EPOCHS PER ROUND</div>
+                <div class="metric"><span id="sample-count">-</span><br>SAMPLE COUNT</div>
+                <div class="metric"><span id="feature-class">-</span><br>FEATURE CLASS</div>
+                <div class="metric"><span id="running-time">-</span><br>RUNNING TIME</div>
+            </div>
+        </div>
+        <div class="main-content-grid">
+            <div class="charts-grid">
+                <div class="big-tile"><div class="tile-title">Train Accuracy / Epoch</div><div id="train-accuracy-chart" class="tile-plot"></div></div>
+                <div class="big-tile"><div class="tile-title">Validation Accuracy / Epoch</div><div id="val-accuracy-chart" class="tile-plot"></div></div>
+                <div class="big-tile"><div class="tile-title">Train Loss / Epoch</div><div id="train-loss-chart" class="tile-plot"></div></div>
+                <div class="big-tile"><div class="tile-title">Gender Model Accuracy / Epoch</div><div id="gender-accuracy-chart" class="tile-plot"></div></div>
+                <div class="big-tile"><div class="tile-title">Age Model Accuracy / Epoch</div><div id="age-accuracy-chart" class="tile-plot"></div></div>
+                <div class="big-tile"><div class="tile-title">Adversarial Model Loss / Epoch</div><div id="adv-loss-chart" class="tile-plot"></div></div>
+            </div>
+            <div class="scores-grid">
+                <div class="small-tile"><div class="tile-title">Test Accuracy FINAL SCORE</div><div id="test-accuracy-score" class="tile-value"></div></div>
+                <div class="small-tile"><div class="tile-title">F1 Score FINAL SCORE</div><div id="f1-score" class="tile-value"></div></div>
+                <div class="small-tile"><div class="tile-title">Gender Leakage FINAL SCORE</div><div id="leak-gender-score" class="tile-value"></div></div>
+                <div class="small-tile"><div class="tile-title">Age Leakage FINAL SCORE</div><div id="leak-age-score" class="tile-value"></div></div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/dashboard.js"></script>
+</body>
+</html>
