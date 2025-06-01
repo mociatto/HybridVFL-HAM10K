@@ -4,6 +4,9 @@ from model import get_model_variant
 import tensorflow as tf
 import time
 
+# Import status configuration
+from status_config import get_status
+
 def preprocess_images(paths, target_size=(224, 224)):
     return np.array([load_and_preprocess_image(p, target_size) for p in paths])
 
@@ -173,9 +176,13 @@ def FairVFL_train(
             
             # Determine current status based on mode and fairness training
             if with_fairness:
-                current_status = f"Training {mode} - Round {current_round} - Epoch {epoch + 1}/{epochs} (Fairness)"
+                current_status = get_status("TRAINING_EPOCH", 
+                                          mode=mode, round=current_round, 
+                                          epoch=epoch + 1, total_epochs=epochs)
             else:
-                current_status = f"Training {mode} - Round {current_round} - Epoch {epoch + 1}/{epochs}"
+                current_status = get_status("TRAINING_EPOCH", 
+                                          mode=mode, round=current_round, 
+                                          epoch=epoch + 1, total_epochs=epochs)
             
             metrics_callback({
                 "batch_size": batch_size,

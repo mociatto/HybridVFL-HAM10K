@@ -8,6 +8,9 @@ from evaluate import evaluation
 
 from sklearn.metrics import f1_score
 
+# Import status configuration
+from status_config import get_status, get_training_status, get_completion_status, get_evaluation_status
+
 # SocketIO dashboard support
 from socketio import Client
 
@@ -125,7 +128,7 @@ if __name__ == "__main__":
         "feature_class": 7,
         "running_time": "00:00",
         "start_time": time.time(),
-        "current_status": "Loading Dataset...",
+        "current_status": get_status("LOADING_DATASET"),
         "train_acc_history": [],
         "val_acc_history": [],
         "train_loss_history": [],
@@ -162,7 +165,7 @@ if __name__ == "__main__":
 
         # Send status update
         status_metrics = {
-            "current_status": f"Initializing {mode_label}...",
+            "current_status": get_status("TRAINING_START", mode=mode_label),
             "batch_size": BATCH_SIZE,
             "round": 0,
             "rounds_total": ROUNDS,
@@ -183,7 +186,7 @@ if __name__ == "__main__":
             
             # Send round start status
             round_status_metrics = {
-                "current_status": f"Training {mode_label} - Round {round_idx + 1}/{ROUNDS}",
+                "current_status": get_training_status(mode_label, round_idx + 1, ROUNDS),
                 "batch_size": BATCH_SIZE,
                 "round": round_idx + 1,
                 "rounds_total": ROUNDS,
@@ -232,7 +235,7 @@ if __name__ == "__main__":
                 "sample_count": len(train_imgs) + len(val_imgs) + len(test_imgs),
                 "feature_class": 7,
                 "running_time": "{:02d}:{:02d}".format(int((time.time() - start) // 60), int((time.time() - start) % 60)),
-                "current_status": f"Completed {mode_label} - Round {round_idx + 1}/{ROUNDS}",
+                "current_status": get_completion_status(mode_label, round_idx + 1, ROUNDS),
                 "train_acc_history": accumulated_train_acc_history,
                 "val_acc_history": accumulated_val_acc_history,
                 "train_loss_history": accumulated_train_loss_history,
@@ -251,7 +254,7 @@ if __name__ == "__main__":
         
         # Send evaluation status
         eval_status_metrics = {
-            "current_status": f"Evaluating {mode_label}...",
+            "current_status": get_evaluation_status(mode_label),
             "batch_size": BATCH_SIZE,
             "round": ROUNDS,
             "rounds_total": ROUNDS,
@@ -287,6 +290,18 @@ if __name__ == "__main__":
         # -- Fairness/leakage on image and tabular embeddings (if fairness models exist)
         if gender_model is not None:
             print("\nLeakage (Gender) on image embeddings:")
+            
+            # Send status update for leakage calculation
+            leakage_status_metrics = {
+                "current_status": get_status("CALCULATING_LEAKAGE"),
+                "batch_size": BATCH_SIZE,
+                "round": ROUNDS,
+                "rounds_total": ROUNDS,
+                "epochs_per_round": EPOCHS,
+                "start_time": start,
+            }
+            send_metrics(leakage_status_metrics)
+            
             leak_gender_image = fairness_leakage(
                 rep_model,
                 gender_model,
@@ -344,7 +359,7 @@ if __name__ == "__main__":
             "sample_count": len(train_imgs) + len(val_imgs) + len(test_imgs),
             "feature_class": 7,
             "running_time": "{:02d}:{:02d}".format(int((time.time() - start) // 60), int((time.time() - start) % 60)),
-            "current_status": f"Completed {mode_label}",
+            "current_status": get_status("EVALUATION_COMPLETED"),
             "start_time": start,
             "train_acc_history": accumulated_train_acc_history,
             "val_acc_history": accumulated_val_acc_history,
@@ -419,7 +434,7 @@ if __name__ == "__main__":
     # Send final completion status with actual training time
     completion_metrics = {
         "training_completed": True,
-        "current_status": "Training Completed",
+        "current_status": get_status("TRAINING_COMPLETED"),
         "final_running_time": "{:02d}:{:02d}".format(int(total_time // 60), int(total_time % 60)),
         "batch_size": BATCH_SIZE,
         "round": ROUNDS,

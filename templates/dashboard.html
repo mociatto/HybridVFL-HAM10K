@@ -3,43 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HYBRIDFL Dashboard</title>
-    <link rel="stylesheet" href="/static/dashboard.css">
-    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.3/socket.io.min.js"></script>
+    <title>Federated Learning Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 </head>
 <body>
     <div id="dashboard-root">
-        <div class="top-bar">
-            <div class="logo">HYBRID<span>FL</span></div>
-            <div class="dataset">HAM10K</div>
-            <div class="metrics">
-                <div class="metric status-metric"><span id="current-status">Initializing...</span><br>CURRENT STATUS</div>
-                <div class="metric"><span id="batch-size">-</span><br>BATCH SIZE</div>
-                <div class="metric"><span id="rounds-completed">-</span><br>ROUNDS COMPLETED</div>
-                <div class="metric"><span id="epochs-per-round">-</span><br>EPOCHS PER ROUND</div>
-                <div class="metric"><span id="sample-count">-</span><br>SAMPLE COUNT</div>
-                <div class="metric"><span id="feature-class">-</span><br>FEATURE CLASS</div>
-                <div class="metric"><span id="running-time">-</span><br>RUNNING TIME</div>
+        <div class="top-section">
+            <div class="logo-area">
+                <div class="logo">HYBRID<span>VFL</span></div>
+                <div class="home-icon">
+                    <img src="{{ url_for('static', filename='home.png') }}" alt="Home" class="home-image">
+                </div>
+            </div>
+            
+            <div class="dataset-box">HAM10K</div>
+            
+            <div class="metrics-ribbon">
+                <div class="status-section">
+                    <div class="status-box">
+                        <div class="metric-label">CURRENT<br>STATUS</div>
+                        <div class="metric-value" id="current-status">-</div>
+                    </div>
+                </div>
+                
+                <div class="right-metrics">
+                    <img src="{{ url_for('static', filename='separator.png') }}" alt="Separator" class="separator-image">
+                    
+                    <div class="metric-box">
+                        <div class="metric-label">BATCH<br>SIZE</div>
+                        <div class="metric-value" id="batch-size">-</div>
+                    </div>
+                    
+                    <img src="{{ url_for('static', filename='separator.png') }}" alt="Separator" class="separator-image">
+                    
+                    <div class="metric-box">
+                        <div class="metric-label">CURRENT<br>ROUND</div>
+                        <div class="metric-value" id="current-round">-</div>
+                    </div>
+                    
+                    <img src="{{ url_for('static', filename='separator.png') }}" alt="Separator" class="separator-image">
+                    
+                    <div class="metric-box">
+                        <div class="metric-label">EPOCH<br>PER ROUND</div>
+                        <div class="metric-value" id="epochs-per-round">-</div>
+                    </div>
+                    
+                    <img src="{{ url_for('static', filename='separator.png') }}" alt="Separator" class="separator-image">
+                    
+                    <div class="metric-box">
+                        <div class="metric-label">FEATURE<br>CLASSES</div>
+                        <div class="metric-value" id="feature-classes">-</div>
+                    </div>
+                    
+                    <img src="{{ url_for('static', filename='separator.png') }}" alt="Separator" class="separator-image">
+                    
+                    <div class="metric-box">
+                        <div class="metric-label">RUNNING<br>TIME</div>
+                        <div class="metric-value" id="running-time">-</div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="main-content-grid">
+
+        <div class="performance-title">
+            GLOBAL MODEL <span>PERFORMANCE</span>
+        </div>
+
+        <div class="charts-container">
             <div class="charts-grid">
-                <div class="big-tile"><div class="tile-title">Train Accuracy / Epoch</div><div id="train-accuracy-chart" class="tile-plot"></div></div>
-                <div class="big-tile"><div class="tile-title">Validation Accuracy / Epoch</div><div id="val-accuracy-chart" class="tile-plot"></div></div>
-                <div class="big-tile"><div class="tile-title">Train Loss / Epoch</div><div id="train-loss-chart" class="tile-plot"></div></div>
-                <div class="big-tile"><div class="tile-title">Gender Model Accuracy / Epoch</div><div id="gender-accuracy-chart" class="tile-plot"></div></div>
-                <div class="big-tile"><div class="tile-title">Age Model Accuracy / Epoch</div><div id="age-accuracy-chart" class="tile-plot"></div></div>
-                <div class="big-tile"><div class="tile-title">Adversarial Model Loss / Epoch</div><div id="adv-loss-chart" class="tile-plot"></div></div>
+                <div class="chart-tile">
+                    <div class="chart-title">TRAINING ACCURACY</div>
+                    <div class="chart-plot" id="train-accuracy-chart"></div>
+                </div>
+                
+                <div class="chart-tile">
+                    <div class="chart-title">VALIDATION ACCURACY</div>
+                    <div class="chart-plot" id="val-accuracy-chart"></div>
+                </div>
+                
+                <div class="chart-tile">
+                    <div class="chart-title">TRAINING LOSS</div>
+                    <div class="chart-plot" id="train-loss-chart"></div>
+                </div>
+                
+                <div class="chart-tile">
+                    <div class="chart-title">GENDER MODEL ACCURACY</div>
+                    <div class="chart-plot" id="gender-accuracy-chart"></div>
+                </div>
+                
+                <div class="chart-tile">
+                    <div class="chart-title">AGE MODEL ACCURACY</div>
+                    <div class="chart-plot" id="age-accuracy-chart"></div>
+                </div>
+                
+                <div class="chart-tile">
+                    <div class="chart-title">ADVERSARIAL MODEL LOSS</div>
+                    <div class="chart-plot" id="adv-loss-chart"></div>
+                </div>
             </div>
-            <div class="scores-grid">
-                <div class="small-tile"><div class="tile-title">Test Accuracy FINAL SCORE</div><div id="test-accuracy-score" class="tile-value"></div></div>
-                <div class="small-tile"><div class="tile-title">F1 Score FINAL SCORE</div><div id="f1-score" class="tile-value"></div></div>
-                <div class="small-tile"><div class="tile-title">Gender Leakage FINAL SCORE</div><div id="leak-gender-score" class="tile-value"></div></div>
-                <div class="small-tile"><div class="tile-title">Age Leakage FINAL SCORE</div><div id="leak-age-score" class="tile-value"></div></div>
+        </div>
+
+        <div class="metrics-container">
+            <div class="metrics-grid">
+                <div class="metric-tile">
+                    <div class="metric-title">FINAL TEST ACCURACY</div>
+                    <div class="metric-big-value" id="test-accuracy-score">-</div>
+                </div>
+                
+                <div class="metric-tile">
+                    <div class="metric-title">FINAL F1 SCORE</div>
+                    <div class="metric-big-value" id="f1-score">-</div>
+                </div>
+                
+                <div class="metric-tile">
+                    <div class="metric-title">GENDER LEAKAGE</div>
+                    <div class="metric-big-value" id="leak-gender-score">-</div>
+                </div>
+                
+                <div class="metric-tile">
+                    <div class="metric-title">AGE LEAKAGE</div>
+                    <div class="metric-big-value" id="leak-age-score">-</div>
+                </div>
             </div>
         </div>
     </div>
-    <script src="/static/dashboard.js"></script>
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
 </body>
 </html>

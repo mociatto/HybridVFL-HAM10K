@@ -55,3 +55,5 @@ update_repo.sh
 new_branch.sh
 remove_branch.sh
 FairVFL_results.npy
+STATUS_CONFIG_README.md
+status_config.py
