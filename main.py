@@ -374,9 +374,7 @@ if __name__ == "__main__":
             "test_accuracy": final_test_accuracy,
             "f1_score": final_f1_score,
         }
-        print(f"DEBUG: Final metrics - train_acc_history length: {len(accumulated_train_acc_history)}")
-        print(f"DEBUG: Final metrics - leak scores: {leak_gender_image}, {leak_age_image}, {leak_gender_tabular}, {leak_age_tabular}")
-        print(f"DEBUG: Final metrics - test accuracy: {final_test_accuracy}, F1: {final_f1_score}")
+        
         send_metrics(final_metrics)
 
         results_summary[mode_label] = {"test": test_result, "val": val_result}

@@ -38,16 +38,8 @@ STATUS_MESSAGES = {
 
 # Status message helper functions
 def get_status(status_key, **kwargs):
-    """
-    Get a formatted status message
+    """Get a formatted status message"""
     
-    Args:
-        status_key: Key from STATUS_MESSAGES dict
-        **kwargs: Variables to format into the message
-    
-    Returns:
-        Formatted status message string
-    """
     if status_key not in STATUS_MESSAGES:
         return f"Unknown Status: {status_key}"
     
@@ -74,15 +66,3 @@ def get_completion_status(mode, round_num, total_rounds):
 def get_evaluation_status(mode):
     """Get evaluation status"""
     return get_status("EVALUATING", mode=mode)
-
-# Example usage:
-# from status_config import get_status, get_training_status
-# 
-# # Simple usage
-# status = get_status("LOADING_DATASET")
-# 
-# # With variables
-# status = get_status("TRAINING_ROUND", mode="FairVFL", round=2, total_rounds=5)
-# 
-# # Using helper functions
-# status = get_training_status("FairVFL", round_num=2, total_rounds=5, epoch=3, total_epochs=10) 

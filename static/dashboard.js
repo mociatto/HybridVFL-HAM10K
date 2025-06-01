@@ -184,7 +184,6 @@ function stopTimer(finalTime) {
 }
 
 socket.on('metrics_update', function(data) {
-    console.log('Metrics update received:', data);
     
     // Reset data change detection flag
     dataChangeDetected = false;
@@ -258,11 +257,6 @@ socket.on('metrics_update', function(data) {
     document.getElementById('leak-age-score').textContent = leakAge;
 });
 
-socket.on('connect', function() {
-    console.log('Connected to dashboard server');
-});
+socket.on('connect', function() {});
 
-socket.on('disconnect', function() {
-    console.log('Disconnected from dashboard server');
-    clearInterval(timerInterval);
-}); 
+socket.on('disconnect', function() {clearInterval(timerInterval);}); 

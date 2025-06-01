@@ -21,7 +21,7 @@ class HybridVFLLauncher:
     def launch_dashboard(self):
         """Launch the dashboard server"""
         try:
-            print("🚀 Starting dashboard server...")
+            print("Starting dashboard server...")
             self.dashboard_process = subprocess.Popen(
                 [sys.executable, 'dashboard.py'],
                 stdout=subprocess.PIPE,
@@ -30,21 +30,21 @@ class HybridVFLLauncher:
             )
             return True
         except Exception as e:
-            print(f"❌ Failed to start dashboard: {e}")
+            print(f"Failed to start dashboard: {e}")
             return False
 
     def launch_training(self, delay=5):
         """Launch the training process after delay"""
         if delay > 0:
-            print(f"⏳ Waiting {delay} seconds for dashboard to initialize...")
+            print(f"Waiting {delay} seconds for dashboard to initialize...")
             time.sleep(delay)
         
         if not os.path.exists('main.py'):
-            print("❌ Error: main.py not found in current directory")
+            print("Error: main.py not found in current directory")
             return False
         
         try:
-            print("🤖 Starting training process...")
+            print("Starting training process...")
             self.training_process = subprocess.Popen(
                 [sys.executable, 'main.py'],
                 stdout=subprocess.PIPE,
@@ -60,20 +60,20 @@ class HybridVFLLauncher:
                     print(f"[TRAINING] {line.rstrip()}")
             
             if self.training_process.returncode == 0:
-                print("✅ Training completed successfully!")
+                print("Training completed successfully!")
             elif self.training_process.returncode is not None:
-                print(f"❌ Training ended with code: {self.training_process.returncode}")
+                print(f"Training ended with code: {self.training_process.returncode}")
                 
             return True
             
         except Exception as e:
-            print(f"❌ Failed to start training: {e}")
+            print(f"Failed to start training: {e}")
             return False
 
     def cleanup(self):
         """Clean up all processes"""
         self.running = False
-        print("\n🛑 Shutting down processes...")
+        print("\nShutting down processes...")
         
         if self.training_process and self.training_process.poll() is None:
             print("  Stopping training...")
@@ -91,7 +91,7 @@ class HybridVFLLauncher:
             except subprocess.TimeoutExpired:
                 self.dashboard_process.kill()
         
-        print("✅ Cleanup complete")
+        print("Cleanup complete")
 
     def run(self, auto_train=True, train_delay=5):
         """Main launcher logic"""
@@ -109,7 +109,7 @@ class HybridVFLLauncher:
                 )
                 training_thread.start()
             else:
-                print("📝 Dashboard ready. Run 'python main.py' manually when ready.")
+                print("Dashboard ready. Run 'python main.py' manually when ready.")
             
             # Keep dashboard running
             try:
@@ -138,13 +138,13 @@ def main():
     
     args = parser.parse_args()
     
-    print("🔬 HYBRIDVFL Launcher")
+    print("HYBRIDVFL Launcher")
     print("=" * 40)
-    print("📊 Dashboard: http://localhost:5050")
+    print("Dashboard: http://localhost:5050")
     if not args.no_auto_train:
-        print(f"🤖 Training: Auto-start in {args.delay}s")
+        print(f"Training: Auto-start in {args.delay}s")
     else:
-        print("🤖 Training: Manual start")
+        print("Training: Manual start")
     print("=" * 40)
     
     # Handle Ctrl+C gracefully

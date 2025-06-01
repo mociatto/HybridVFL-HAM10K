@@ -103,11 +103,6 @@ def FairVFL_train(
             gender_targets = train_attr[:, 0]
             age_targets = train_attr[:, 1]
 
-            # Debug: Print shapes
-            print(f"DEBUG: fused_embeddings shape: {fused_embeddings.shape}")
-            print(f"DEBUG: gender_targets shape: {gender_targets.shape}")
-            print(f"DEBUG: age_targets shape: {age_targets.shape}")
-
             print("Training gender model...")
             gender_hist = gender_model.fit(fused_embeddings, gender_targets, batch_size=batch_size, epochs=1, verbose=1)
             gender_acc = gender_hist.history['accuracy'][0]
@@ -124,7 +119,6 @@ def FairVFL_train(
                 try:
                     # Use smaller batch size for adversarial training to avoid memory issues
                     adv_batch_size = min(batch_size, fused_embeddings.shape[0])
-                    print(f"DEBUG: Training adversarial model with batch_size={adv_batch_size}")
                     
                     adv_hist = gender_cons_adv.fit(fused_embeddings, fused_embeddings, 
                                                  batch_size=adv_batch_size, epochs=1, verbose=1)
@@ -138,7 +132,6 @@ def FairVFL_train(
                     print(f"Skipping adversarial training for this epoch")
                     adv_loss_history.append(0.0)  # Use 0 as fallback
             else:
-                print("WARNING: Empty fused_embeddings, skipping adversarial training")
                 adv_loss_history.append(0.0)
 
             print("Adversarial representation confusion step...")
