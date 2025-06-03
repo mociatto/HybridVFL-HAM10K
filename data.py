@@ -29,7 +29,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         batch_images = [load_and_preprocess_image(path, self.target_size) for path in batch_paths]
         return (np.array(batch_images), np.array(batch_tabular)), np.array(batch_labels)
 
-def load_ham10000(data_dir="data", test_size=0.2, random_state=42):
+def load_ham10000(data_dir="data", test_size=0.2, random_state=None):
     img_dir1 = os.path.join(data_dir, "HAM10000_images_part_1")
     img_dir2 = os.path.join(data_dir, "HAM10000_images_part_2")
     metadata_path = os.path.join(data_dir, "HAM10000_metadata.csv")

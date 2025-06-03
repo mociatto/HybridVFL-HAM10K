@@ -68,6 +68,18 @@
             </div>
         </div>
 
+        <div class="mode-selection-container">
+            <div class="mode-selection-title">SELECT TRAINING MODE</div>
+            <div class="mode-buttons">
+                <button id="vanilla-btn" class="mode-button vanilla-button">
+                    Vanilla VFL
+                </button>
+                <button id="fair-btn" class="mode-button fair-button">
+                    Secure VFL
+                </button>
+            </div>
+        </div>
+
         <div class="performance-title">
             GLOBAL MODEL <span>PERFORMANCE</span>
         </div>
@@ -82,27 +94,27 @@
                 <div class="chart-tile">
                     <div class="chart-title">VALIDATION ACCURACY</div>
                     <div class="chart-plot" id="val-accuracy-chart"></div>
-                </div>
+            </div>
                 
                 <div class="chart-tile">
                     <div class="chart-title">TRAINING LOSS</div>
                     <div class="chart-plot" id="train-loss-chart"></div>
-                </div>
+            </div>
                 
                 <div class="chart-tile">
                     <div class="chart-title">GENDER MODEL ACCURACY</div>
                     <div class="chart-plot" id="gender-accuracy-chart"></div>
-                </div>
+            </div>
                 
                 <div class="chart-tile">
                     <div class="chart-title">AGE MODEL ACCURACY</div>
                     <div class="chart-plot" id="age-accuracy-chart"></div>
-                </div>
+            </div>
                 
                 <div class="chart-tile">
                     <div class="chart-title">ADVERSARIAL MODEL LOSS</div>
                     <div class="chart-plot" id="adv-loss-chart"></div>
-                </div>
+            </div>
             </div>
         </div>
 
@@ -116,17 +128,17 @@
                 <div class="metric-tile">
                     <div class="metric-title">FINAL F1 SCORE</div>
                     <div class="metric-big-value" id="f1-score">-</div>
-                </div>
+            </div>
                 
                 <div class="metric-tile">
                     <div class="metric-title">GENDER LEAKAGE</div>
                     <div class="metric-big-value" id="leak-gender-score">-</div>
-                </div>
+            </div>
                 
                 <div class="metric-tile">
                     <div class="metric-title">AGE LEAKAGE</div>
                     <div class="metric-big-value" id="leak-age-score">-</div>
-                </div>
+            </div>
             </div>
         </div>
     </div>

@@ -6,3 +6,5 @@ pandas
 numpy
 imageio
 matplotlib
+flask
+flask socketio
