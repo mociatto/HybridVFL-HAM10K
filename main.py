@@ -5,14 +5,11 @@ import tensorflow as tf
 from data import load_ham10000, DataGenerator, load_and_preprocess_image
 from model import get_model_variant
 from train import source_inspired_sequential_train
-from evaluate import evaluation
 
 from sklearn.metrics import f1_score
 
-# Import status configuration
 from status_config import get_status, get_training_status, get_completion_status, get_evaluation_status
 
-# SocketIO dashboard support
 from socketio import Client
 
 sio = Client()
@@ -34,7 +31,6 @@ def set_random_seeds(seed=None):
     if seed is not None:
         np.random.seed(seed)
         tf.random.set_seed(seed)
-        # Also set Python's random module if needed
         import random
         random.seed(seed)
 
@@ -49,32 +45,27 @@ def passive_fairness_audit(rep_model, fairness_model, img_paths, tabular, target
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-BATCH_SIZE = 8
-EPOCHS = 3
-ROUNDS = 2
-PERCENTAGE = 0.05
+BATCH_SIZE = 16
+EPOCHS = 5
+ROUNDS = 5
+PERCENTAGE = 0.1
 LR = 0.001
 HYPER_GENDER = 0.5
 HYPER_AGE = 0.3
 
-# Server-side configuration
 SecureVFL = False
 
-# Model seed configuration
 if SecureVFL:
-    model_random_seed = 123  # Seed for SecureVFL model initialization
+    model_random_seed = 123
 else:
-    model_random_seed = 789  # Seed for VanillaFL model initialization
+    model_random_seed = 789
 
-# Set random seeds for model initialization (different for each mode)
 set_random_seeds(model_random_seed)
 
 if __name__ == "__main__":
-    # Set up seeds for fair comparison between modes
     mode_label = "SecureVFL" if SecureVFL else "VanillaFL"
     
-    # CRITICAL: Use SAME data split for both modes to ensure fair comparison
-    FIXED_DATA_SPLIT_SEED = 42  # Fixed seed for consistent data splits across modes
+    FIXED_DATA_SPLIT_SEED = 42
     
     print("Loading HAM10000 dataset...")
     print(f"Model init seed: {model_random_seed} | Data split seed: {FIXED_DATA_SPLIT_SEED} (FIXED)")
@@ -82,7 +73,6 @@ if __name__ == "__main__":
     print(f"*** Data split consistency: GUARANTEED (seed={FIXED_DATA_SPLIT_SEED}) ***")
     print(f"*** Only model initialization differs: VanillaFL=789, SecureVFL=123 ***")
     
-    # Load data with FIXED random state for consistent train/test splits across modes
     data = load_ham10000(DATA_DIR, random_state=FIXED_DATA_SPLIT_SEED)
     image_client = data['image_client']
     vertical_client = data['vertical_client']
@@ -92,14 +82,12 @@ if __name__ == "__main__":
     (vert_train, vert_label_train) = vertical_client['train']
     (vert_test, vert_label_test) = vertical_client['test']
     
-    # ENHANCED: Log data fingerprints for verification
     import hashlib
     train_fingerprint = hashlib.md5(str(img_train[:5]).encode()).hexdigest()[:8]
     test_fingerprint = hashlib.md5(str(img_test[:5]).encode()).hexdigest()[:8]
     print(f"*** Data fingerprints: Train={train_fingerprint}, Test={test_fingerprint} ***")
     print("*** These fingerprints should be IDENTICAL across mode switches ***")
 
-    # Reduce dataset for faster debug (percentage)
     if PERCENTAGE < 1.0:
         n_train = int(len(img_train) * PERCENTAGE)
         n_val = int(len(img_train) * 0.2 * PERCENTAGE)
@@ -147,9 +135,9 @@ if __name__ == "__main__":
     print(f"Running in {mode_label} mode")
     print(f"Model init seed: {model_random_seed} | Data split seed: {FIXED_DATA_SPLIT_SEED} (FIXED)")
     print("Data consistency verification:")
-    print(f"  ✅ Same train/test split across ALL mode switches")
-    print(f"  ✅ Only model weights differ between modes")
-    print(f"  ✅ Fair comparison guaranteed")
+    print(f"  Same train/test split across ALL mode switches")
+    print(f"  Only model weights differ between modes")
+    print(f"  Fair comparison guaranteed")
     print("Expected results:")
     if SecureVFL:
         print("  SecureVFL (privacy-preserving):")
@@ -169,12 +157,10 @@ if __name__ == "__main__":
         mode_label: SecureVFL
     }
 
-    # To track SecureVFL fairness models for passive audit
     final_gender_model = None
     final_age_model = None
     final_rep_model = None
 
-    # Initialize histories for dashboard (example for PrivacyVFL)
     train_acc_history = []
     val_acc_history = []
     train_loss_history = []
@@ -182,7 +168,6 @@ if __name__ == "__main__":
     age_acc_history = []
     adv_loss_history = []
 
-    # After loading data and before training loop:
     initial_metrics = {
         "batch_size": BATCH_SIZE,
         "round": 0,
@@ -206,7 +191,6 @@ if __name__ == "__main__":
     }
     send_metrics(initial_metrics)
 
-    # Initialize accumulated histories across all rounds
     accumulated_train_acc_history = []
     accumulated_val_acc_history = []
     accumulated_train_loss_history = []
@@ -214,7 +198,6 @@ if __name__ == "__main__":
     accumulated_age_acc_history = []
     accumulated_adv_loss_history = []
     
-    # Initialize leakage variables first
     leak_gender_image = 0
     leak_age_image = 0
     leak_gender_tabular = 0
@@ -222,14 +205,12 @@ if __name__ == "__main__":
     gender_acc_fused = 0
     age_acc_fused = 0
     
-    # Initialize final performance metrics
     final_test_accuracy = 0
     final_f1_score = 0
     
     for mode_label, with_fairness in modes.items():
         print(f"\n======= Training Mode: {mode_label} (with_fairness={with_fairness}) =======")
 
-        # Send status update
         status_metrics = {
             "current_status": get_status("TRAINING_START", mode=mode_label),
             "batch_size": BATCH_SIZE,
@@ -250,7 +231,6 @@ if __name__ == "__main__":
         for round_idx in range(ROUNDS):
             print(f"\n--- FL Round {round_idx + 1}/{ROUNDS} ---")
             
-            # Send round start status
             round_status_metrics = {
                 "current_status": get_training_status(mode_label, round_idx + 1, ROUNDS),
                 "batch_size": BATCH_SIZE,
@@ -283,7 +263,6 @@ if __name__ == "__main__":
                                      accumulated_gender_acc_history, accumulated_age_acc_history, accumulated_adv_loss_history)
             )
 
-            # Accumulate histories across rounds
             accumulated_train_acc_history.extend(train_acc_history)
             accumulated_val_acc_history.extend(val_acc_history)
             accumulated_train_loss_history.extend(train_loss_history)
@@ -291,7 +270,6 @@ if __name__ == "__main__":
             accumulated_age_acc_history.extend(age_acc_history)
             accumulated_adv_loss_history.extend(adv_loss_history)
 
-            # Send metrics to dashboard after each round (live update)
             metrics = {
                 "batch_size": BATCH_SIZE,
                 "round": round_idx + 1,
@@ -307,7 +285,6 @@ if __name__ == "__main__":
                 "gender_acc_history": accumulated_gender_acc_history,
                 "age_acc_history": accumulated_age_acc_history,
                 "adv_loss_history": accumulated_adv_loss_history,
-                # Leakage scores will be sent after training completes
                 "leak_gender_image": 0,
                 "leak_age_image": 0,
                 "leak_gender_tabular": 0,
@@ -317,26 +294,21 @@ if __name__ == "__main__":
 
         print("\nEvaluating after final round...")
         
-        # Prepare test data with normalized features
         test_images = np.array([load_and_preprocess_image(p, (224, 224)) for p in test_imgs])
         val_images = np.array([load_and_preprocess_image(p, (224, 224)) for p in val_imgs])
         
-        # Create normalized test metadata using the same scaler from training
         from sklearn.preprocessing import StandardScaler
         scaler = StandardScaler()
-        scaler.fit(train_metadata)  # Fit on original training data
+        scaler.fit(train_metadata)
         test_metadata_normalized = scaler.transform(test_metadata)
         val_metadata_normalized = scaler.transform(val_metadata)
         
-        # Use the new monolithic model for evaluation
         test_gen = DataGenerator(test_imgs, test_metadata_normalized, test_labels, batch_size=BATCH_SIZE)
         val_gen = DataGenerator(val_imgs, val_metadata_normalized, val_labels, batch_size=BATCH_SIZE)
         
-        # Evaluate using the monolithic model
         test_loss, test_acc = model.evaluate(test_gen, verbose=0)
         val_loss, val_acc = model.evaluate(val_gen, verbose=0)
         
-        # Calculate F1 score
         test_preds = model.predict(test_gen, verbose=0)
         test_pred_classes = np.argmax(test_preds, axis=1)
         test_f1 = f1_score(test_labels, test_pred_classes, average='macro')
@@ -355,17 +327,14 @@ if __name__ == "__main__":
             evaluate_image_only, evaluate_tabular_only, evaluate_fusion, fairness_leakage
         )
 
-        # FIXED: Skip individual client evaluation for now (legacy models have wrong dimensions)
         print("\nSKIPPING individual client evaluation (architecture mismatch)")
         print("Main monolithic model performance:")
         print(f"   Test: {test_acc:.4f} accuracy, {test_f1:.4f} F1")
         print(f"   This is {test_acc/0.143:.1f}x better than random (14.3% for 7 classes)")
 
-        # Set dummy values for individual metrics
         img_only_metrics = {"acc": 0.0, "f1": 0.0}
         tab_only_metrics = {"acc": 0.0, "f1": 0.0}
         
-        # Fusion metrics are the main model metrics
         fusion_acc = test_result["acc"]
         fusion_f1 = test_result["f1"]
         best_solo_acc = 0.0
@@ -375,30 +344,24 @@ if __name__ == "__main__":
         print(f"   Monolithic VFL: {fusion_acc:.4f} accuracy, {fusion_f1:.4f} F1")
         print(f"   Improvement over random: +{(fusion_acc - 0.143)*100:.1f} percentage points")
 
-        # FIXED: Restore privacy leakage evaluation using the new architecture
         if gender_model is not None and age_model is not None:
             print("\n" + "="*60)
             print("PRIVACY LEAKAGE ANALYSIS")
             print("="*60)
             
-            # Get embeddings from the representation model (new architecture)
             test_embeddings = rep_model.predict([test_images, test_metadata_normalized], batch_size=BATCH_SIZE, verbose=0)
             
-            # Test leakage from embeddings
             print("Testing leakage from model embeddings:")
             
-            # Gender leakage
             if len(test_attrs) > 0:
                 gender_preds = np.argmax(gender_model.predict(test_embeddings, verbose=0), axis=1)
                 gender_acc_fused = np.mean(gender_preds == test_attrs[:, 0])
                 print(f"   Gender leakage: {gender_acc_fused:.4f} ({gender_acc_fused:.1%})")
                 
-                # Age leakage
                 age_preds = np.argmax(age_model.predict(test_embeddings, verbose=0), axis=1)
                 age_acc_fused = np.mean(age_preds == test_attrs[:, 1])
                 print(f"   Age leakage: {age_acc_fused:.1%}")
                 
-                # Compare to random baselines
                 gender_random = 0.5  # 50% for binary
                 age_random = 0.2     # 20% for 5 classes
                 
@@ -421,17 +384,14 @@ if __name__ == "__main__":
             age_acc_fused = 0.0
             print("\nNo fairness models available for leakage testing")
 
-        # Set leakage values (simplified approach)
         leak_gender_image = gender_acc_fused
         leak_age_image = age_acc_fused 
         leak_gender_tabular = gender_acc_fused
         leak_age_tabular = age_acc_fused
         
-        # Capture final performance metrics
         final_test_accuracy = test_result["acc"]
         final_f1_score = test_result["f1"]
         
-        # Send final metrics with leakage scores after training completes
         final_metrics = {
             "batch_size": BATCH_SIZE,
             "round": ROUNDS,
@@ -462,7 +422,6 @@ if __name__ == "__main__":
 
         results_summary[mode_label] = {"test": test_result, "val": val_result}
 
-        # If this is SecureVFL, keep the fairness models/rep_model for passive audit
         if with_fairness:
             final_gender_model = gender_model
             final_age_model = age_model
@@ -472,7 +431,6 @@ if __name__ == "__main__":
     total_time = time.time() - start
     print(f"\nTotal training time: {round(total_time, 2)} seconds")
     
-    # Send final completion status with actual training time and preserved final metrics
     completion_metrics = {
         "training_completed": True,
         "current_status": get_status("TRAINING_COMPLETED"),

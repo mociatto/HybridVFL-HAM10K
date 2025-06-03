@@ -139,11 +139,11 @@ def get_gradient_reversal_model(embedding_dim, sensitive_classes):
     
     model = Model(inputs=input_layer, outputs=[features, adv_output])
     
-    # BALANCED: Moderate adversarial loss weight for stable training
+    # Compile with BALANCED adversarial loss weight to prevent numerical instability
     model.compile(
-        optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=0.001),  # Reduced learning rate
+        optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=0.0005),  # Reduced learning rate for stability
         loss={'privacy_features': 'mse', 'adversarial_output': 'sparse_categorical_crossentropy'},
-        loss_weights={'privacy_features': 1.0, 'adversarial_output': -2.0}  # Reduced adversarial weight
+        loss_weights={'privacy_features': 1.0, 'adversarial_output': -1.0}  # Reduced from -5.0 to -1.0
     )
     
     return model

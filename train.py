@@ -514,22 +514,26 @@ def source_inspired_sequential_train(
                         # Get protected embeddings from both adversarial models
                         gender_protected, _ = gender_cons_adv(embeddings)
                         age_protected, _ = age_cons_adv(embeddings)
-                        # Combine protections
-                        return 0.5 * gender_protected + 0.5 * age_protected
+                        # Combine protections with reduced mixing to prevent over-obfuscation
+                        return 0.7 * embeddings + 0.15 * gender_protected + 0.15 * age_protected
                     
-                    # Get original rep_model inputs and intermediate output
-                    rep_inputs = rep_model.input
-                    raw_embeddings = rep_model.output
+                    # Get original model inputs and outputs
+                    rep_inputs = rep_model.inputs
+                    rep_outputs = rep_model.outputs[0]  # Get the representation output
                     
-                    # Apply adversarial protection
-                    protected_embeddings = Lambda(adversarial_protection_layer, name='adversarial_protection')(raw_embeddings)
+                    # Apply adversarial protection layer with UNIQUE name
+                    unique_suffix = str(int(time.time() * 1000) % 10000)  # Unique suffix
+                    protected_embeddings = Lambda(
+                        adversarial_protection_layer, 
+                        name=f'adversarial_protection_{unique_suffix}'
+                    )(rep_outputs)
                     
-                    # Create new protected representation model
-                    protected_rep_model = Model(inputs=rep_inputs, outputs=protected_embeddings, name='protected_rep_model')
+                    # Create protected model
+                    protected_rep_model = Model(inputs=rep_inputs, outputs=protected_embeddings, name=f'protected_rep_model_{unique_suffix}')
                     
-                    # Replace the original rep_model with protected version
+                    # Replace the original representation model
+                    print(f"  ✅ Adversarial protection applied successfully (ID: {unique_suffix})")
                     rep_model = protected_rep_model
-                    print("  ✅ Representation model now includes adversarial protection!")
                     
                     # Set the adversarial loss for tracking
                     adv_loss = avg_adversarial_loss
@@ -565,6 +569,10 @@ def source_inspired_sequential_train(
                 age_acc = age_hist.history['accuracy'][0]
             else:
                 age_acc = 0.0
+            
+            # FIXED: Print VanillaFL fairness model accuracies (these should match final leakage on test data)
+            print(f"  Fairness models: Gender Acc={gender_acc:.3f}, Age Acc={age_acc:.3f}")
+            print(f"  Note: In VanillaFL, these training accuracies should closely match final test leakage")
             
             adv_loss = 0.0  # No adversarial training in VanillaFL
 
