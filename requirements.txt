@@ -8,3 +8,4 @@ imageio
 matplotlib
 flask
 flask-socketio
+imbalanced-learn
