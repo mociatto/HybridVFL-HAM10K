@@ -233,7 +233,8 @@ function plotLineChart(elementId, data, color, epochs_per_round, rounds_total) {
             linecolor: '#3a3d42',
             linewidth: 1,
             color: '#aaa',
-            rangemode: 'tozero'
+            rangemode: 'tozero',
+            tickformat: elementId.includes('accuracy') ? '.0%' : undefined
         },
         margin: { l: 50, r: 20, t: 20, b: 50 },
         showlegend: false,

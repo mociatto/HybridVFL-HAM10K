@@ -26,22 +26,15 @@ def apply_smote_balancing(metadata_train, train_labels, balance_strategy='auto')
     Returns:
         balanced_metadata, balanced_labels
     """
-    print("Applying SMOTE balancing to tabular data...")
+    print("Applying SMOTE balancing...")
     
     # Check current class distribution
     class_counts = Counter(train_labels)
     total_samples = len(train_labels)
     
-    print("   Original distribution:")
-    for class_id, count in sorted(class_counts.items()):
-        percentage = (count / total_samples) * 100
-        print(f"     Class {class_id}: {count} samples ({percentage:.1f}%)")
-    
     # Determine target size based on dominant class
     max_class_size = max(class_counts.values())
     target_size = max_class_size  # Use dominant class size as target
-    
-    print(f"   Target samples per class: {target_size} (based on dominant class)")
     
     # Create sampling strategy dictionary
     sampling_strategy = {}
@@ -55,7 +48,7 @@ def apply_smote_balancing(metadata_train, train_labels, balance_strategy='auto')
     k_neighbors = min(5, min_class_size - 1) if min_class_size > 1 else 1
     
     if k_neighbors < 1:
-        print("   Warning: Very small classes detected, using ADASYN instead of SMOTE")
+        print("   Small classes detected, using ADASYN")
         sampler = ADASYN(random_state=42, n_neighbors=1, sampling_strategy=sampling_strategy)
     else:
         # Use SMOTETomek for better quality synthetic samples
@@ -65,22 +58,13 @@ def apply_smote_balancing(metadata_train, train_labels, balance_strategy='auto')
     try:
         balanced_metadata, balanced_labels = sampler.fit_resample(metadata_train, train_labels)
         
-        # Show balanced distribution
-        balanced_class_counts = Counter(balanced_labels)
         balanced_total = len(balanced_labels)
-        
-        print("   Balanced distribution:")
-        for class_id, count in sorted(balanced_class_counts.items()):
-            percentage = (count / balanced_total) * 100
-            print(f"     Class {class_id}: {count} samples ({percentage:.1f}%)")
-        
         print(f"   Dataset size: {total_samples} -> {balanced_total} (+{balanced_total - total_samples} synthetic)")
         
         return balanced_metadata, balanced_labels
         
     except Exception as e:
-        print(f"   Error in SMOTE: {e}")
-        print("   Using original unbalanced data")
+        print(f"   SMOTE failed, using original data")
         return metadata_train, train_labels
 
 def apply_image_augmentation_balancing(train_images, train_labels, balance_strategy='dominant'):
@@ -257,9 +241,9 @@ def source_inspired_sequential_train(
         start_time = time.time()
 
     # Apply SMOTE balancing to training data
-    print("\n" + "="*60)
-    print("SMOTE DATA BALANCING")
-    print("="*60)
+    print("\n" + "="*50)
+    print("DATA PREPROCESSING")
+    print("="*50)
     
     # FIXED: Manual feature normalization for tabular data
     print("Normalizing tabular features...")
@@ -268,9 +252,6 @@ def source_inspired_sequential_train(
     metadata_train_normalized = scaler.fit_transform(metadata_train)
     metadata_val_normalized = scaler.transform(metadata_val)
     metadata_test_normalized = scaler.transform(metadata_test)
-    
-    print(f"  Original metadata range: [{metadata_train.min():.3f}, {metadata_train.max():.3f}]")
-    print(f"  Normalized metadata range: [{metadata_train_normalized.min():.3f}, {metadata_train_normalized.max():.3f}]")
     
     # Apply SMOTE to balance metadata/tabular data
     balanced_metadata_train, balanced_train_labels = apply_smote_balancing(
@@ -303,13 +284,8 @@ def source_inspired_sequential_train(
     
     balanced_train_images_paths = np.array(balanced_train_images_paths)
     
-    print(f"  Consistent dataset size: {len(balanced_train_labels)} samples")
-    print(f"  Image paths: {len(balanced_train_images_paths)}, Labels: {len(balanced_train_labels)}")
-    
-    # Show final balanced distribution
-    print("\nFINAL BALANCED DATASET ANALYSIS:")
-    analyze_class_distribution(balanced_train_labels)
-    print("="*60 + "\n")
+    print(f"  Dataset balanced: {len(balanced_train_labels)} samples")
+    print("="*50 + "\n")
     
     # FIXED: Properly expand attributes to match balanced dataset size
     if train_data[3] is not None and len(balanced_train_labels) > len(train_data[3]):
@@ -341,9 +317,9 @@ def source_inspired_sequential_train(
         balanced_train_attrs = train_data[3][:len(balanced_train_labels)] if train_data[3] is not None else None
 
     # SOURCE-INSPIRED SEQUENTIAL TRAINING
-    print("="*60)
-    print("SOURCE-INSPIRED SEQUENTIAL TRAINING")
-    print("="*60)
+    print("="*50)
+    print("TRAINING")
+    print("="*50)
 
     for epoch in range(epochs):
         print(f"Epoch {epoch + 1}/{epochs}")
@@ -354,21 +330,9 @@ def source_inspired_sequential_train(
         # Prepare balanced training data
         train_images = preprocess_images(balanced_train_images_paths, target_size=(224, 224))
         
-        # DEBUG: Check data shapes and ranges
-        print(f"  DEBUG - Train images shape: {train_images.shape}, range: [{train_images.min():.3f}, {train_images.max():.3f}]")
-        print(f"  DEBUG - Metadata shape: {balanced_metadata_train.shape}, range: [{balanced_metadata_train.min():.3f}, {balanced_metadata_train.max():.3f}]")
-        print(f"  DEBUG - Labels shape: {balanced_train_labels.shape}, unique: {np.unique(balanced_train_labels)}")
-        
         # Create data generator for main model training
         train_gen = DataGenerator(balanced_train_images_paths, balanced_metadata_train, balanced_train_labels, batch_size=batch_size)
         val_gen = DataGenerator(val_data[0], metadata_val_normalized, val_label, batch_size=batch_size)
-        
-        # DEBUG: Test a single batch
-        test_batch = train_gen[0]
-        print(f"  DEBUG - Batch input shapes: {[x.shape for x in test_batch[0]]}")
-        print(f"  DEBUG - Batch output shape: {test_batch[1].shape}")
-        print(f"  DEBUG - Batch label range: [{test_batch[1].min()}, {test_batch[1].max()}]")
-        print(f"  DEBUG - Normalized tabular range: [{test_batch[0][1].min():.3f}, {test_batch[0][1].max():.3f}]")
         
         # Train main model (monolithic architecture)
         history = main_model.fit(train_gen, epochs=1, verbose=1, validation_data=val_gen)
@@ -376,12 +340,6 @@ def source_inspired_sequential_train(
         train_loss = history.history['loss'][0]
         train_acc = history.history['accuracy'][0]
         val_acc = history.history['val_accuracy'][0]
-        
-        # DEBUG: Check model predictions
-        pred_sample = main_model.predict(test_batch[0], verbose=0)
-        print(f"  DEBUG - Model predictions shape: {pred_sample.shape}")
-        print(f"  DEBUG - Prediction probabilities: {pred_sample[0]}")
-        print(f"  DEBUG - Max prediction class: {np.argmax(pred_sample[0])}, True class: {test_batch[1][0]}")
         
         print(f"  Main model: Train Acc={train_acc:.3f}, Val Acc={val_acc:.3f}")
 
@@ -572,7 +530,6 @@ def source_inspired_sequential_train(
             
             # FIXED: Print VanillaFL fairness model accuracies (these should match final leakage on test data)
             print(f"  Fairness models: Gender Acc={gender_acc:.3f}, Age Acc={age_acc:.3f}")
-            print(f"  Note: In VanillaFL, these training accuracies should closely match final test leakage")
             
             adv_loss = 0.0  # No adversarial training in VanillaFL
 

@@ -45,11 +45,11 @@ def passive_fairness_audit(rep_model, fairness_model, img_paths, tabular, target
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-BATCH_SIZE = 16
+BATCH_SIZE = 8
 EPOCHS = 5
 ROUNDS = 5
-PERCENTAGE = 0.1
-LR = 0.001
+PERCENTAGE = 0.02
+LR = 0.01
 HYPER_GENDER = 0.5
 HYPER_AGE = 0.3
 
@@ -151,7 +151,6 @@ if __name__ == "__main__":
         print("    * Standard federated learning baseline")
     print("=" * 50 + "\n")
 
-    results_summary = {}
     start = time.time()
     modes = {
         mode_label: SecureVFL
@@ -420,14 +419,11 @@ if __name__ == "__main__":
         
         send_metrics(final_metrics)
 
-        results_summary[mode_label] = {"test": test_result, "val": val_result}
-
         if with_fairness:
             final_gender_model = gender_model
             final_age_model = age_model
             final_rep_model = rep_model
 
-    np.save("SecureVFL_results.npy", results_summary)
     total_time = time.time() - start
     print(f"\nTotal training time: {round(total_time, 2)} seconds")
     
