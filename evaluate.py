@@ -41,7 +41,7 @@ def evaluate_image_only(image_classifier, images, labels, batch_size=128, detail
     FIXED: Now uses image_classifier (which outputs probabilities) instead of embedding model
     """
     if image_classifier is None:
-        print("❌ Image classifier not available")
+        print("Image classifier not available")
         return {"acc": 0.0, "f1": 0.0}
     
     try:
@@ -55,7 +55,7 @@ def evaluate_image_only(image_classifier, images, labels, batch_size=128, detail
             return compute_metrics(labels, y_pred, name="Image-only")
             
     except Exception as e:
-        print(f"❌ Error in image evaluation: {e}")
+        print(f"Error in image evaluation: {e}")
         return {"acc": 0.0, "f1": 0.0}
 
 def evaluate_tabular_only(tabular_classifier, metadata, labels, batch_size=128, detailed=False):
@@ -63,7 +63,7 @@ def evaluate_tabular_only(tabular_classifier, metadata, labels, batch_size=128, 
     FIXED: Now uses tabular_classifier (which outputs probabilities) instead of embedding model
     """
     if tabular_classifier is None:
-        print("❌ Tabular classifier not available")
+        print("Tabular classifier not available")
         return {"acc": 0.0, "f1": 0.0}
     
     try:
@@ -77,7 +77,7 @@ def evaluate_tabular_only(tabular_classifier, metadata, labels, batch_size=128, 
             return compute_metrics(labels, y_pred, name="Tabular-only")
             
     except Exception as e:
-        print(f"❌ Error in tabular evaluation: {e}")
+        print(f"Error in tabular evaluation: {e}")
         return {"acc": 0.0, "f1": 0.0}
 
 def evaluate_fusion(fusion_head, img_embeds, tab_embeds, labels, batch_size=128, detailed=False):
@@ -96,7 +96,7 @@ def evaluate_fusion(fusion_head, img_embeds, tab_embeds, labels, batch_size=128,
             return compute_metrics(labels, y_pred, name="Fusion")
             
     except Exception as e:
-        print(f"❌ Error in fusion evaluation: {e}")
+        print(f"Error in fusion evaluation: {e}")
         return {"acc": 0.0, "f1": 0.0}
 
 def evaluation(fusion_head, image_embedding_model, tabular_embedding_model, data, batch_size=128):
