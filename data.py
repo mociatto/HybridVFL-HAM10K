@@ -36,11 +36,11 @@ def load_ham10000(data_dir="data", test_size=0.2, random_state=None):
 
     df = pd.read_csv(metadata_path)
 
-    # Remove unknown sex entries and encode as binary
+    # Remove unknown genders and encode binary : male = 1, female = 2
     df = df[df['sex'].isin(['male', 'female'])]
     df['sex'] = df['sex'].map({'male': 1, 'female': 0})
 
-    # Fill missing ages
+    # Fill missing ages with median
     df['age'] = df['age'].fillna(df['age'].median())
 
     # Create 5-class age bins: ≤30, 31–45, 46–60, 61–75, ≥76
@@ -55,7 +55,7 @@ def load_ham10000(data_dir="data", test_size=0.2, random_state=None):
     df['localization'] = LabelEncoder().fit_transform(df['localization'].astype(str))
     df['label'] = LabelEncoder().fit_transform(df['dx'])
 
-    # Map image filenames to full paths
+    # Map images
     image_paths = []
     for img_name in df['image_id']:
         path1 = os.path.join(img_dir1, f"{img_name}.jpg")
@@ -63,30 +63,28 @@ def load_ham10000(data_dir="data", test_size=0.2, random_state=None):
         full_path = path1 if os.path.exists(path1) else path2
         image_paths.append(full_path)
 
-    # Features for image model (age, sex, localization)
+    # Features for image model
     features = df[['age', 'sex', 'localization']].values
     labels = df['label'].values
     sensitive_attrs = df[['sex', 'age_bin']].values
 
-    # Metadata for tabular model (Client 2)
+    # Metadata for tabular model
     metadata_cols = ['age', 'sex', 'localization']
     metadata_tabular = df[metadata_cols].values
 
-    # Alignment: image_paths, features, labels, sens_attrs, metadata_tabular are all in same order (same DataFrame)
 
     img_train, img_test, feat_train, feat_test, label_train, label_test, sens_train, sens_test, meta_train, meta_test = train_test_split(
         image_paths, features, labels, sensitive_attrs, metadata_tabular,
         test_size=test_size, random_state=random_state, stratify=labels
     )
 
-    # Return a dictionary interface for consistency with main.py
     return {
         'image_client': {
             'train': (np.array(img_train), np.array(feat_train), np.array(label_train), np.array(sens_train)),
             'test': (np.array(img_test), np.array(feat_test), np.array(label_test), np.array(sens_test))
         },
         'vertical_client': {
-            'train': (np.array(meta_train), np.array(label_train)),  # meta_train aligned to img_train
-            'test': (np.array(meta_test), np.array(label_test)),     # meta_test aligned to img_test
+            'train': (np.array(meta_train), np.array(label_train)),
+            'test': (np.array(meta_test), np.array(label_test)),
         }
     }
