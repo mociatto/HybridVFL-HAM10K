@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
 """
 HYBRIDVFL Dashboard & Training Launcher
-Alternative launcher with more control options
 """
 
 import subprocess
@@ -147,7 +145,7 @@ def main():
         print("Training: Manual start")
     print("=" * 40)
     
-    # Handle Ctrl+C gracefully
+    # Ctrl+C gracefully
     launcher = HybridVFLLauncher()
     
     def signal_handler(signum, frame):
