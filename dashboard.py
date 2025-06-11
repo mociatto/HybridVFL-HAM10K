@@ -58,7 +58,6 @@ def handle_mode_switch(data):
         # Stop current training if running
         stop_training()
         
-        # FIXED: Better preserve final metrics and add mode history
         preserved_final_metrics = {
             'test_accuracy': latest_metrics.get('test_accuracy', 0),
             'f1_score': latest_metrics.get('f1_score', 0), 
@@ -75,7 +74,7 @@ def handle_mode_switch(data):
         # Store previous mode results for comparison
         previous_mode = "SecureVFL" if latest_metrics.get('current_status', '').lower().find('secure') != -1 else "VanillaFL"
         if preserved_final_metrics['training_completed'] and preserved_final_metrics['test_accuracy'] > 0:
-            # Store results from previous mode for comparison
+
             mode_comparison_key = f'previous_{previous_mode.lower()}_results'
             preserved_final_metrics[mode_comparison_key] = {
                 'test_accuracy': preserved_final_metrics['test_accuracy'],
@@ -85,10 +84,8 @@ def handle_mode_switch(data):
                 'mode': previous_mode
             }
         
-        # Clear previous metrics to prevent showing stale data, but keep final results
         latest_metrics = {}
         
-        # Send reset metrics but PRESERVE final metrics from previous training
         reset_metrics = {
             'current_status': f'Switching to {mode} mode...',
             'batch_size': '-',
@@ -103,7 +100,6 @@ def handle_mode_switch(data):
             'gender_acc_history': [],
             'age_acc_history': [],
             'adv_loss_history': [],
-            # FIXED: Preserve final metrics from previous training
             'test_accuracy': preserved_final_metrics['test_accuracy'],
             'f1_score': preserved_final_metrics['f1_score'],
             'leak_gender_fused': preserved_final_metrics['leak_gender_fused'],
@@ -113,14 +109,12 @@ def handle_mode_switch(data):
             'leak_gender_tabular': preserved_final_metrics['leak_gender_tabular'],
             'leak_age_tabular': preserved_final_metrics['leak_age_tabular'],
             'final_running_time': preserved_final_metrics['final_running_time'],
-            # ADDED: Mode comparison data
             'mode_switching': True,
             'previous_mode_results': preserved_final_metrics.get(f'previous_{previous_mode.lower()}_results', {}),
             'switching_to_mode': mode
         }
         emit('metrics_update', reset_metrics, broadcast=True)
         
-        # Update main.py with new SecureVFL value
         if update_securevfl_setting(privacy_vfl):
             # Start new training process
             start_training()
@@ -148,19 +142,17 @@ def handle_mode_switch(data):
 def update_securevfl_setting(secure_vfl_value):
     """Update the SecureVFL setting in main.py"""
     try:
-        # Read current main.py content
+        
         with open('main.py', 'r') as file:
             content = file.read()
         
-        # Find and replace the SecureVFL setting
-        # Look for pattern: SecureVFL = True/False
+
         pattern = r'SecureVFL\s*=\s*(True|False)'
         replacement = f'SecureVFL = {secure_vfl_value}'
         
         if re.search(pattern, content):
             new_content = re.sub(pattern, replacement, content)
             
-            # Write back to file
             with open('main.py', 'w') as file:
                 file.write(new_content)
             
@@ -181,14 +173,13 @@ def stop_training():
     if training_process and training_process.poll() is None:
         print("Stopping current training process...")
         try:
-            # Try graceful termination first
+
             training_process.terminate()
             
-            # Wait a bit for graceful shutdown
             try:
                 training_process.wait(timeout=5)
             except subprocess.TimeoutExpired:
-                # Force kill if not terminated gracefully
+                # Force kill if not terminated
                 training_process.kill()
                 training_process.wait()
             
@@ -198,7 +189,6 @@ def stop_training():
     
     training_process = None
     
-    # Emit training stopped event
     socketio.emit('training_stopped', {'message': 'Training stopped'})
 
 def start_training():
@@ -216,10 +206,9 @@ def launch_training():
     """Launch main.py training process"""
     global training_process
     
-    # Wait a moment for file system to settle
+    # Wait for file system
     time.sleep(1)
     
-    # Check if main.py exists
     if not os.path.exists('main.py'):
         print("Error: main.py not found in current directory")
         socketio.emit('mode_switch_error', {'message': 'main.py not found'})
@@ -239,7 +228,7 @@ def launch_training():
             preexec_fn=os.setsid if os.name != 'nt' else None  # For proper process group handling
         )
         
-        # Print training output in real-time
+        # Print training output
         for line in iter(training_process.stdout.readline, ''):
             if line and training_process.poll() is None:
                 print(f"[TRAINING] {line.rstrip()}")
@@ -263,7 +252,7 @@ def cleanup_training():
     if training_process and training_process.poll() is None:
         print("Stopping training process...")
         try:
-            if os.name != 'nt':  # Unix-like systems
+            if os.name != 'nt':
                 os.killpg(os.getpgid(training_process.pid), signal.SIGTERM)
             else:  # Windows
                 training_process.terminate()
